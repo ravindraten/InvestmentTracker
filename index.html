@@ -1106,6 +1106,52 @@
             font-weight: 400 !important;
         }
 
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 12px 5px 5px;
+            max-width: 200px;
+        }
+
+        .user-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            color: #0d0f14;
+            font-family: 'Playfair Display', serif;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .user-email-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+        }
+
+        @media (max-width: 600px) {
+            .user-email-label {
+                display: none;
+            }
+
+            .user-chip {
+                padding: 5px;
+            }
+        }
+
         .hidden {
             display: none !important;
         }
@@ -1226,6 +1272,10 @@
                 <button class="btn btn-ghost" onclick="importData()">⬆ Import JSON</button>
                 <button class="btn btn-ghost btn-square" onclick="refreshAllRates()" title="Refresh all rates"
                     style="color:var(--accent-blue);">↻</button>
+                <div id="userChip" class="user-chip hidden">
+                    <span id="userAvatar" class="user-avatar"></span>
+                    <span id="userEmail" class="user-email-label"></span>
+                </div>
                 <button class="btn btn-ghost btn-square" id="logoutBtn" onclick="logout()" title="Logout"
                     style="color:var(--accent-red);">⏻</button>
                 <button class="btn btn-primary" onclick="openAddModal()">+ Add Entry</button>
@@ -1480,15 +1530,42 @@
 
         let isMainUser = false;
 
+        // USER ROLES:
+        //   ravindraten@gmail.com     → main user, all tabs, full edit
+        //   ravindra.nayak@outlook.com → read-only, Ravindra tab default, only Ravindra tab visible
+        //   anyone else               → read-only, Supriya tab default, only Supriya tab visible
+
+        function getEmailRole(email) {
+            if (!email) return 'supriya-viewer';
+            const e = email.toLowerCase();
+            if (e === 'ravindraten@gmail.com') return 'main';
+            if (e === 'ravindra.nayak@outlook.com') return 'ravi-viewer';
+            return 'supriya-viewer';
+        }
+
+        function setUserChip(email) {
+            const chip = document.getElementById('userChip');
+            const avatar = document.getElementById('userAvatar');
+            const label = document.getElementById('userEmail');
+            if (!chip || !email) return;
+            // Avatar: first letter of name part
+            const initial = email.charAt(0).toUpperCase();
+            avatar.textContent = initial;
+            // Label: show name before @ if short enough, else full email
+            const namePart = email.split('@')[0];
+            label.textContent = namePart.length <= 16 ? namePart : email;
+            label.title = email;
+            chip.classList.remove('hidden');
+        }
+
         function updateUIPermissions(email) {
-            if (isMainUser) {
-                document.body.classList.add('main-user');
-            } else {
-                document.body.classList.remove('main-user');
-            }
+            const role = getEmailRole(email);
+            isMainUser = (role === 'main');
 
-            if (!email) return;
+            // body class for CSS hooks
+            document.body.classList.toggle('main-user', isMainUser);
 
+            // Edit buttons — only main user
             const addBtn = document.querySelector('button[onclick="openAddModal()"]');
             const addRowRaviBtn = document.getElementById('addRowRavi');
             const addRowSupriyaBtn = document.getElementById('addRowSupriya');
@@ -1497,45 +1574,30 @@
             const logoutBtn = document.getElementById('logoutBtn');
             const refreshBtn = document.querySelector('button[onclick="refreshAllRates()"]');
 
-            if (isMainUser) {
-                if (addBtn) addBtn.classList.remove('hidden');
-                if (addRowRaviBtn) addRowRaviBtn.classList.remove('hidden');
-                if (addRowSupriyaBtn) addRowSupriyaBtn.classList.remove('hidden');
-                addRowBtns.forEach(btn => btn.classList.remove('hidden'));
-                if (logoutBtn) logoutBtn.classList.remove('hidden');
-                if (refreshBtn) refreshBtn.classList.remove('hidden');
+            [addBtn, addRowRaviBtn, addRowSupriyaBtn, importBtn].forEach(el => {
+                if (!el) return;
+                el.classList.toggle('hidden', !isMainUser);
+            });
+            addRowBtns.forEach(btn => btn.classList.toggle('hidden', !isMainUser));
+            if (logoutBtn) logoutBtn.classList.remove('hidden'); // always show logout
+            if (refreshBtn) refreshBtn.classList.remove('hidden');
+
+            // Tab visibility — non-main users only see their own tab
+            // All tabs always visible for everyone — just set the default active tab per role
+            const tabCombined = document.querySelector('.tab:nth-child(1)');
+            const tabRavi = document.querySelector('.tab:nth-child(2)');
+            const tabSupriya = document.querySelector('.tab:nth-child(3)');
+            [tabCombined, tabRavi, tabSupriya].forEach(t => t && t.classList.remove('hidden'));
+
+            if (role === 'main') {
+                switchTab('combined', tabCombined);
+            } else if (role === 'ravi-viewer') {
+                switchTab('ravi', tabRavi);
             } else {
-                if (addBtn) addBtn.classList.add('hidden');
-                if (addRowRaviBtn) addRowRaviBtn.classList.add('hidden');
-                if (addRowSupriyaBtn) addRowSupriyaBtn.classList.add('hidden');
-                addRowBtns.forEach(btn => btn.classList.add('hidden'));
+                switchTab('supriya', tabSupriya);
             }
 
-            if (importBtn) {
-                if (isMainUser) {
-                    importBtn.classList.remove('hidden');
-                } else {
-                    importBtn.classList.add('hidden');
-                }
-            }
-
-            const emailLower = email.toLowerCase();
-            if (emailLower === 'ravindraten@gmail.com') {
-                const combinedTab = document.querySelector('.tab:first-child');
-                if (combinedTab) {
-                    switchTab('combined', combinedTab);
-                }
-            } else if (emailLower === 'ravindra.nayak@outlook.com') {
-                const raviTab = document.querySelector('.tab:nth-child(2)');
-                if (raviTab) {
-                    switchTab('ravi', raviTab);
-                }
-            } else {
-                const supriyaTab = document.querySelector('.tab:nth-child(3)');
-                if (supriyaTab) {
-                    switchTab('supriya', supriyaTab);
-                }
-            }
+            if (email) setUserChip(email);
         }
 
         async function handleLogin(e) {
@@ -1571,6 +1633,8 @@
         }
 
         async function logout() {
+            const chip = document.getElementById('userChip');
+            if (chip) chip.classList.add('hidden');
             await sbClient.auth.signOut();
             sessionStorage.removeItem('rs_authenticated');
             document.getElementById('emailInput').value = '';
@@ -2273,8 +2337,10 @@
                 const { data: { session } } = await sbClient.auth.getSession();
                 if (session && session.user) {
                     isMainUser = session.user.email.toLowerCase() === 'ravindraten@gmail.com';
+                    updateUIPermissions(session.user.email);
+                } else {
+                    updateUIPermissions();
                 }
-                updateUIPermissions();
                 await initSync();
                 await fetchAllRates();
             }
