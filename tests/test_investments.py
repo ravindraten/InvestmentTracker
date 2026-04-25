@@ -3,7 +3,7 @@ import json
 import re
 from pathlib import Path
 
-INVEST_HTML = Path(__file__).parent.parent / "invest_shared.html"
+INVEST_HTML = Path(__file__).parent.parent / "index.html"
 INVEST_ORIG = Path(__file__).parent.parent / "invest.html"
 
 

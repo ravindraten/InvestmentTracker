@@ -120,8 +120,9 @@
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 7px;
-            padding: 9px 18px;
+            padding: 8px 14px;
             border-radius: 6px;
             font-family: 'DM Sans', sans-serif;
             font-size: 13px;
@@ -129,6 +130,12 @@
             cursor: pointer;
             transition: all 0.18s;
             border: none;
+        }
+
+        .btn-square {
+            padding: 8px;
+            min-width: 36px;
+            min-height: 36px;
         }
 
         .btn-primary {
@@ -764,28 +771,20 @@
             display: block;
         }
 
-        .view-ravi {
-            display: none;
-        }
-
-        .view-supriya {
-            display: none;
-        }
-
-        body.tab-ravi .view-combined {
-            display: none;
-        }
-
-        body.tab-ravi .view-ravi {
+        /* Tab visibility — default: both sections shown */
+        .section-ravi,
+        .section-supriya {
             display: block;
         }
 
-        body.tab-supriya .view-combined {
+        /* Ravindra tab: hide supriya */
+        .view-combined.tab-ravi .section-supriya {
             display: none;
         }
 
-        body.tab-supriya .view-supriya {
-            display: block;
+        /* Supriya tab: hide ravi */
+        .view-combined.tab-supriya .section-ravi {
+            display: none;
         }
 
         /* Responsive Improvements */
@@ -807,13 +806,23 @@
 
             .header-actions {
                 width: 100%;
-                justify-content: space-between;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 8px;
             }
 
             .header-actions .btn {
-                flex: 1;
+                flex: 1 1 auto;
                 justify-content: center;
-                padding: 12px;
+                padding: 10px 8px;
+                min-width: 0;
+            }
+
+            .header-actions .btn-square {
+                flex: 0 0 auto;
+                min-width: 36px;
+                min-height: 36px;
+                width: 36px;
             }
 
             .summary-grid {
@@ -833,28 +842,23 @@
                 grid-template-columns: 1fr;
             }
 
+            /* Mobile: hide traditional table, show cards instead */
             .table-wrap {
-                margin: 0 -16px 32px;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+                margin: 0 0 24px;
+                border-radius: 12px;
+                overflow: hidden;
             }
 
-            table {
-                min-width: 600px;
-                /* Force scroll for table content visibility */
+            .table-wrap table {
+                display: none !important;
             }
 
-            th,
-            td {
-                padding: 12px;
-                font-size: 13px;
+            .mobile-cards {
+                display: block !important;
             }
 
-            .editable {
-                min-width: 60px;
+            .add-row-btn {
+                border-radius: 0 0 12px 12px;
             }
 
             .tabs {
@@ -891,15 +895,215 @@
             }
 
             .header-actions {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .header-actions .btn {
+                flex: 1 1 auto;
+                padding: 8px 6px;
+            }
+
+            .header-actions .btn-square {
+                flex: 0 0 auto;
+                min-width: 32px;
+                min-height: 32px;
+                width: 32px;
             }
 
             .login-box {
                 padding: 30px 20px;
                 margin: 20px;
             }
+        }
+
+        /* ── Mobile card styles (always defined, shown only on mobile via media query) ── */
+        .mobile-cards {
+            display: none;
+        }
+
+        .m-card {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 16px 14px;
+            transition: background 0.15s;
+        }
+
+        .m-card:last-child {
+            border-bottom: none;
+        }
+
+        .m-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .m-card-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+            flex: 1;
+            line-height: 1.3;
+        }
+
+        .m-card-name input {
+            background: none;
+            border: none;
+            border-bottom: 1px dashed var(--border);
+            font: inherit;
+            color: inherit;
+            width: 100%;
+            padding: 2px 0;
+        }
+
+        .m-card-name input:focus {
+            outline: none;
+            border-bottom-color: var(--accent-gold);
+        }
+
+        .m-card-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .m-val-block {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .m-val-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .m-val-number {
+            font-family: 'DM Mono', monospace;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .m-val-number input {
+            background: none;
+            border: none;
+            font: inherit;
+            color: inherit;
+            width: 100%;
+            padding: 0;
+        }
+
+        .m-val-number input:focus {
+            outline: none;
+        }
+
+        .m-val-number.readonly {
+            color: var(--text-secondary);
+        }
+
+        .m-val-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: 'DM Mono', monospace;
+            margin-top: 3px;
+        }
+
+        .m-card-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .m-notes {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .m-notes input {
+            background: none;
+            border: none;
+            font: inherit;
+            color: inherit;
+            width: 100%;
+            padding: 2px 0;
+        }
+
+        .m-notes input:focus {
+            outline: none;
+        }
+
+        .m-notes input::placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .m-delete-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .m-delete-btn:hover {
+            background: rgba(201, 76, 76, 0.15);
+            color: #e08080;
+        }
+
+        .m-card-totals {
+            background: var(--surface2);
+            border-top: 2px solid var(--border);
+            padding: 14px 16px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .m-total-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .m-total-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .m-total-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .m-zero {
+            color: var(--text-muted) !important;
+            font-weight: 400 !important;
         }
 
         .hidden {
@@ -998,7 +1202,8 @@
         <div class="login-box">
             <div class="card-label">Sign In</div>
             <form onsubmit="handleLogin(event)">
-                <input type="email" class="form-input" id="emailInput" placeholder="Email" required style="margin-bottom:10px;">
+                <input type="email" class="form-input" id="emailInput" placeholder="Email" required
+                    style="margin-bottom:10px;">
                 <input type="password" class="form-input" id="passwordInput" placeholder="Password" required>
                 <div class="login-status" id="loginStatus"></div>
                 <button type="submit" class="btn btn-primary" style="width:100%; margin-top:16px;">Sign In</button>
@@ -1019,8 +1224,10 @@
             <div class="header-actions">
                 <button class="btn btn-ghost" onclick="exportData()">⬇ Export JSON</button>
                 <button class="btn btn-ghost" onclick="importData()">⬆ Import JSON</button>
-                <button class="btn btn-ghost" id="logoutBtn" onclick="logout()" title="Logout"
-                    style="color:var(--accent-red); opacity:0.7;">⏻</button>
+                <button class="btn btn-ghost btn-square" onclick="refreshAllRates()" title="Refresh all rates"
+                    style="color:var(--accent-blue);">↻</button>
+                <button class="btn btn-ghost btn-square" id="logoutBtn" onclick="logout()" title="Logout"
+                    style="color:var(--accent-red);">⏻</button>
                 <button class="btn btn-primary" onclick="openAddModal()">+ Add Entry</button>
             </div>
         </header>
@@ -1028,22 +1235,18 @@
         <!-- FX Rate Bar -->
         <div class="fx-bar">
             <span class="fx-label">EUR → INR</span>
-            <input class="fx-input" id="fxRate" type="number" value="90.50" step="0.01" onchange="recalcAll()" />
+            <input class="fx-input" id="fxRate" type="number" value="90.50" step="0.01" readonly />
             <span style="color:var(--text-muted)">|</span>
             <span class="fx-label">All totals computed at this rate</span>
-            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="fetchFX()">↻ Refresh
-                Rate</button>
         </div>
 
         <!-- Gold Calculator -->
         <div class="fx-bar" id="goldBar" style="gap:14px; flex-wrap:wrap;">
             <span style="color:var(--accent-gold);font-size:13px;">🪙</span>
             <span class="fx-label">Gold Price / gram</span>
-            <input class="fx-input" id="goldPerGram" type="number" value="80" step="0.01" onchange="recalcAll()"
+            <input class="fx-input" id="goldPerGram" type="number" value="80" step="0.01" readonly
                 style="width:90px;" />
             <span class="fx-label">€/g</span>
-            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="fetchGold()">↻ Refresh
-                Gold</button>
             <span style="color:var(--border)">|</span>
             <span class="fx-label">Total gold grams:</span>
             <span class="fx-value" id="totalGoldGrams">—</span>
@@ -1058,11 +1261,9 @@
         <div class="fx-bar" id="silverBar" style="gap:14px; flex-wrap:wrap;">
             <span style="color:var(--accent-gold);font-size:13px;">🥈</span>
             <span class="fx-label">Silver Price / gram</span>
-            <input class="fx-input" id="silverPerGram" type="number" value="0.85" step="0.001" onchange="recalcAll()"
-                style="width:90px;color:var(--accent-gold);" />
+            <input class="fx-input" id="silverPerGram" type="number" value="0.85" step="0.001" readonly
+                style="width:90px; color:var(--accent-gold);" />
             <span class="fx-label">€/g</span>
-            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="fetchSilver()">↻ Refresh
-                Silver</button>
             <span style="color:var(--border)">|</span>
             <span class="fx-label">Total silver grams:</span>
             <span class="fx-value" id="totalSilverGrams" style="color:var(--accent-gold)">—</span>
@@ -1095,15 +1296,19 @@
             <div class="summary-card" style="--card-accent: var(--ravi-color);">
                 <div class="card-label">Ravindra</div>
                 <div style="margin-bottom:4px;">
-                    <span id="raviTotal" style="font-size:22px; font-weight:600; color:var(--euro-color); display:block;">€0</span>
-                    <span id="raviInr" style="font-size:22px; font-weight:600; color:var(--inr-color); display:block;">₹0</span>
+                    <span id="raviTotal"
+                        style="font-size:22px; font-weight:600; color:var(--euro-color); display:block;">€0</span>
+                    <span id="raviInr"
+                        style="font-size:22px; font-weight:600; color:var(--inr-color); display:block;">₹0</span>
                 </div>
             </div>
             <div class="summary-card" style="--card-accent: var(--supriya-color);">
                 <div class="card-label">Supriya</div>
                 <div style="margin-bottom:4px;">
-                    <span id="supriyaTotal" style="font-size:22px; font-weight:600; color:var(--euro-color); display:block;">€0</span>
-                    <span id="supriyaInr" style="font-size:22px; font-weight:600; color:var(--inr-color); display:block;">₹0</span>
+                    <span id="supriyaTotal"
+                        style="font-size:22px; font-weight:600; color:var(--euro-color); display:block;">€0</span>
+                    <span id="supriyaInr"
+                        style="font-size:22px; font-weight:600; color:var(--inr-color); display:block;">₹0</span>
                 </div>
             </div>
         </div>
@@ -1138,106 +1343,68 @@
             </div>
 
             <!-- Ravi table -->
-            <div class="section-header">
-                <div class="section-title">
-                    Ravindra <span class="owner-badge badge-ravi">RAVI</span>
+            <div class="section-ravi">
+                <div class="section-header">
+                    <div class="section-title">
+                        Ravindra <span class="owner-badge badge-ravi">RAVI</span>
+                    </div>
+                    <button class="btn btn-ghost" id="addRowRavi" style="font-size:12px;"
+                        onclick="openAddModal('Ravi')">+ Add Row</button>
                 </div>
-                <button class="btn btn-ghost" style="font-size:12px;" onclick="openAddModal('Ravi')">+ Add Row</button>
-            </div>
-            <div class="table-wrap">
-                <table id="raviTable">
-                    <thead>
-                        <tr>
-                            <th>Investment / Place</th>
-                            <th>Category</th>
-                            <th>Amount (€)</th>
-                            <th>Amount (₹)</th>
-                            <th>Notes</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="raviBody"></tbody>
-                    <tfoot>
-                        <tr class="total-row" id="raviFooter"></tr>
-                    </tfoot>
-                </table>
-                <button class="add-row-btn" onclick="openAddModal('Ravi')">＋ Add investment</button>
+                <div class="table-wrap">
+                    <table id="raviTable">
+                        <thead>
+                            <tr>
+                                <th>Investment / Place</th>
+                                <th>Category</th>
+                                <th>Amount (€)</th>
+                                <th>Amount (₹)</th>
+                                <th>Notes</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="raviBody"></tbody>
+                        <tfoot>
+                            <tr class="total-row" id="raviFooter"></tr>
+                        </tfoot>
+                    </table>
+                    <div class="mobile-cards" id="raviCards"></div>
+                    <button class="add-row-btn hidden" onclick="openAddModal('Ravi')">＋ Add investment</button>
+                </div>
             </div>
 
             <!-- Supriya table -->
-            <div class="section-header">
-                <div class="section-title">
-                    Supriya <span class="owner-badge badge-supriya">SUPRIYA</span>
+            <div class="section-supriya">
+                <div class="section-header">
+                    <div class="section-title">
+                        Supriya <span class="owner-badge badge-supriya">SUPRIYA</span>
+                    </div>
+                    <button class="btn btn-ghost" id="addRowSupriya" style="font-size:12px;"
+                        onclick="openAddModal('Supriya')">+ Add Row</button>
                 </div>
-                <button class="btn btn-ghost" style="font-size:12px;" onclick="openAddModal('Supriya')">+ Add
-                    Row</button>
-            </div>
-            <div class="table-wrap">
-                <table id="supriyaTable">
-                    <thead>
-                        <tr>
-                            <th>Investment / Place</th>
-                            <th>Category</th>
-                            <th>Amount (€)</th>
-                            <th>Amount (₹)</th>
-                            <th>Notes</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="supriyaBody"></tbody>
-                    <tfoot>
-                        <tr class="total-row" id="supriyaFooter"></tr>
-                    </tfoot>
-                </table>
-                <button class="add-row-btn" onclick="openAddModal('Supriya')">＋ Add investment</button>
-            </div>
-        </div>
-
-        <!-- RAVI VIEW -->
-        <div class="view-ravi">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Investment / Place</th>
-                            <th>Category</th>
-                            <th>Amount (€)</th>
-                            <th>Amount (₹)</th>
-                            <th>Notes</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="raviBody2"></tbody>
-                    <tfoot>
-                        <tr class="total-row" id="raviFooter2"></tr>
-                    </tfoot>
-                </table>
-                <button class="add-row-btn" onclick="openAddModal('Ravi')">＋ Add investment</button>
+                <div class="table-wrap">
+                    <table id="supriyaTable">
+                        <thead>
+                            <tr>
+                                <th>Investment / Place</th>
+                                <th>Category</th>
+                                <th>Amount (€)</th>
+                                <th>Amount (₹)</th>
+                                <th>Notes</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="supriyaBody"></tbody>
+                        <tfoot>
+                            <tr class="total-row" id="supriyaFooter"></tr>
+                        </tfoot>
+                    </table>
+                    <div class="mobile-cards" id="supriyaCards"></div>
+                    <button class="add-row-btn hidden" onclick="openAddModal('Supriya')">＋ Add investment</button>
+                </div>
             </div>
         </div>
 
-        <!-- SUPRIYA VIEW -->
-        <div class="view-supriya">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Investment / Place</th>
-                            <th>Category</th>
-                            <th>Amount (€)</th>
-                            <th>Amount (₹)</th>
-                            <th>Notes</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="supriyaBody2"></tbody>
-                    <tfoot>
-                        <tr class="total-row" id="supriyaFooter2"></tr>
-                    </tfoot>
-                </table>
-                <button class="add-row-btn" onclick="openAddModal('Supriya')">＋ Add investment</button>
-            </div>
-        </div>
 
     </div>
 
@@ -1311,6 +1478,46 @@
             sbClient = window.supabase.createClient(SB_URL, SB_KEY);
         }
 
+        let isMainUser = false;
+
+        function updateUIPermissions() {
+            if (isMainUser) {
+                document.body.classList.add('main-user');
+            } else {
+                document.body.classList.remove('main-user');
+            }
+
+            const addBtn = document.querySelector('button[onclick="openAddModal()"]');
+            const addRowRaviBtn = document.getElementById('addRowRavi');
+            const addRowSupriyaBtn = document.getElementById('addRowSupriya');
+            const addRowBtns = document.querySelectorAll('.add-row-btn');
+            const importBtn = document.querySelector('button[onclick="importData()"]');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const refreshBtn = document.querySelector('button[onclick="refreshAllRates()"]');
+
+            if (isMainUser) {
+                if (addBtn) addBtn.classList.remove('hidden');
+                if (addRowRaviBtn) addRowRaviBtn.classList.remove('hidden');
+                if (addRowSupriyaBtn) addRowSupriyaBtn.classList.remove('hidden');
+                addRowBtns.forEach(btn => btn.classList.remove('hidden'));
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+                if (refreshBtn) refreshBtn.classList.remove('hidden');
+            } else {
+                if (addBtn) addBtn.classList.add('hidden');
+                if (addRowRaviBtn) addRowRaviBtn.classList.add('hidden');
+                if (addRowSupriyaBtn) addRowSupriyaBtn.classList.add('hidden');
+                addRowBtns.forEach(btn => btn.classList.add('hidden'));
+            }
+
+            if (importBtn) {
+                if (isMainUser) {
+                    importBtn.classList.remove('hidden');
+                } else {
+                    importBtn.classList.add('hidden');
+                }
+            }
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('emailInput').value;
@@ -1325,7 +1532,9 @@
 
                 if (error) throw error;
 
+                isMainUser = email.toLowerCase() === 'ravindraten@gmail.com';
                 document.getElementById('loginOverlay').classList.add('hidden');
+                updateUIPermissions();
                 await initSync();
             } catch (err) {
                 status.textContent = err.message || 'Login failed';
@@ -1435,18 +1644,15 @@
         // ─── FX RATE ──────────────────────────────────────────────────────────────────
         function getFX() { return parseFloat(document.getElementById('fxRate').value) || 90.5; }
 
-        async function fetchFX() {
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '↻ Updating (Live WU Rate)...';
-            btn.disabled = true;
+        async function refreshAllRates() {
+            await Promise.all([fetchFX(), fetchGold(), fetchSilver()]);
+        }
 
+        async function fetchFX() {
             try {
-                // Using the same API and logic as philatelyworld.in
                 const response = await fetch('https://open.er-api.com/v6/latest/EUR');
                 const data = await response.json();
                 if (data && data.rates && data.rates.INR) {
-                    // Philately World applies a 1.02 adjustment for WU markup
                     const rate = (data.rates.INR * 1.02).toFixed(2);
                     document.getElementById('fxRate').value = rate;
                     recalcAll();
@@ -1454,23 +1660,14 @@
                 }
             } catch (err) {
                 console.error('Failed to fetch FX rate:', err);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
             }
         }
 
         async function fetchGold() {
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '↻ Updating...';
-            btn.disabled = true;
-
             try {
                 const response = await fetch('https://api.gold-api.com/price/XAU/EUR');
                 const data = await response.json();
                 if (data && data.price) {
-                    // Gold API returns price per Troy Ounce (31.1035g)
                     const pricePerGram = (data.price / 31.1035).toFixed(2);
                     document.getElementById('goldPerGram').value = pricePerGram;
                     recalcAll();
@@ -1478,23 +1675,14 @@
                 }
             } catch (err) {
                 console.error('Failed to fetch Gold price:', err);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
             }
         }
 
         async function fetchSilver() {
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '↻ Updating...';
-            btn.disabled = true;
-
             try {
                 const response = await fetch('https://api.gold-api.com/price/XAG/EUR');
                 const data = await response.json();
                 if (data && data.price) {
-                    // Gold API returns price per Troy Ounce (31.1035g)
                     const pricePerGram = (data.price / 31.1035).toFixed(3);
                     document.getElementById('silverPerGram').value = pricePerGram;
                     recalcAll();
@@ -1502,9 +1690,6 @@
                 }
             } catch (err) {
                 console.error('Failed to fetch Silver price:', err);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
             }
         }
 
@@ -1538,30 +1723,165 @@
             const grams = isMetal ? parseGoldGrams(item) : 0;
             const pricePerGram = isGold ? getGoldPerGram() : getSilverPerGram();
             const gv = isMetal && grams > 0 && pricePerGram > 0 ? grams * pricePerGram : null;
+            const canEdit = isMainUser;
 
+            // EUR cell
             const eurCell = isMetal && gv !== null
                 ? `<td style="padding:14px 18px;vertical-align:middle;">
         <span class="currency-eur">\u20ac${gv.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         <span style="font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;display:block;margin-top:2px;">${grams}g \u00d7 \u20ac${pricePerGram}/g</span>
       </td>`
-                : `<td><input class="editable currency-eur" type="number" value="${item.eur || ''}" placeholder="0" step="0.01"
-        onchange="updateField('${item.id}','${owner}','eur',this.value)" /></td>`;
+                : canEdit
+                    ? `<td><input class="editable currency-eur" type="number" value="${item.eur || ''}" placeholder="0" step="0.01"
+        onchange="updateField('${item.id}','${owner}','eur',this.value)" /></td>`
+                    : `<td style="padding:14px 18px;"><span class="currency-eur">${item.eur ? '\u20ac' + Number(item.eur).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span class=\"currency-empty\">\u2014</span>'}</span></td>`;
+
+            // Place cell
+            const placeCell = canEdit
+                ? `<input class="editable td-place" type="text" value="${escHtml(item.place)}"
+                    placeholder="${isGold ? 'Name + grams e.g. Solid Gold 200g' : isSilver ? 'Name + grams e.g. Silver Coins 500g' : 'Investment name...'}"
+                    onchange="updateField('${item.id}','${owner}','place',this.value)"
+                    style="text-align:left;color:var(--text-primary);font-weight:500;min-width:160px;" />`
+                : `<span style="font-weight:500;color:var(--text-primary);">${escHtml(item.place)}</span>`;
+
+            // INR cell
+            const inrCell = canEdit
+                ? `<input class="editable currency-inr" type="number" value="${item.inr || ''}" placeholder="0" step="1"
+                    onchange="updateField('${item.id}','${owner}','inr',this.value)" />`
+                : `<span class="currency-inr">${item.inr ? '\u20b9' + Number(item.inr).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '<span class=\"currency-empty\">\u2014</span>'}</span>`;
+
+            // Notes cell
+            const notesCell = canEdit
+                ? `<input class="editable notes-input" type="text" value="${escHtml(item.notes || '')}" placeholder="Notes..."
+                    onchange="updateField('${item.id}','${owner}','notes',this.value)" />`
+                : `<span style="font-size:12px;color:var(--text-secondary);font-style:italic;">${escHtml(item.notes || '')}</span>`;
+
+            // Delete button (main user only)
+            const deleteCell = canEdit
+                ? `<td><div class="row-actions"><button class="icon-btn" onclick="deleteRow('${item.id}','${owner}')" title="Delete">\u2715</button></div></td>`
+                : `<td></td>`;
 
             return `<tr data-id="${item.id}" data-owner="${owner}">
-    <td><input class="editable td-place" type="text" value="${escHtml(item.place)}"
-      placeholder="${isGold ? 'Name + grams e.g. Solid Gold 200g' : isSilver ? 'Name + grams e.g. Silver Coins 500g' : 'Investment name...'}"
-      onchange="updateField('${item.id}','${owner}','place',this.value)"
-      style="text-align:left;color:var(--text-primary);font-weight:500;min-width:160px;" /></td>
+    <td>${placeCell}</td>
     <td>${catBadge(item.category)}</td>
     ${eurCell}
-    <td><input class="editable currency-inr" type="number" value="${item.inr || ''}" placeholder="0" step="1"
-      onchange="updateField('${item.id}','${owner}','inr',this.value)" /></td>
-    <td><input class="editable notes-input" type="text" value="${escHtml(item.notes || '')}" placeholder="Notes..."
-      onchange="updateField('${item.id}','${owner}','notes',this.value)" /></td>
-    <td><div class="row-actions">
-      <button class="icon-btn" onclick="deleteRow('${item.id}','${owner}')" title="Delete">\u2715</button>
-    </div></td>
+    <td>${inrCell}</td>
+    <td>${notesCell}</td>
+    ${deleteCell}
   </tr>`;
+        }
+
+        // ── Mobile card renderer ──────────────────────────────────────────────
+        function renderMobileCards(items, owner) {
+            if (!items || items.length === 0) {
+                return '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No entries yet</div>';
+            }
+            const canEdit = isMainUser;
+            const fx = getFX();
+
+            const cardsHtml = items.map(item => {
+                const isGold = item.category === 'gold';
+                const isSilver = item.category === 'silver';
+                const isMetal = isGold || isSilver;
+                const grams = isMetal ? parseGoldGrams(item) : 0;
+                const pricePerGram = isGold ? getGoldPerGram() : getSilverPerGram();
+                const gv = isMetal && grams > 0 && pricePerGram > 0 ? grams * pricePerGram : null;
+                const eurDisplay = gv !== null ? gv : (parseFloat(item.eur) || 0);
+                const inrDisplay = parseFloat(item.inr) || 0;
+
+                // Name
+                const nameHtml = canEdit
+                    ? `<input type="text" value="${escHtml(item.place)}"
+                        onchange="updateField('${item.id}','${owner}','place',this.value)"
+                        style="background:none;border:none;border-bottom:1px dashed var(--border);font:600 15px/'DM Sans',sans-serif;color:var(--text-primary);width:100%;padding:2px 0;" />`
+                    : `<span style="font-size:15px;font-weight:600;color:var(--text-primary);">${escHtml(item.place)}</span>`;
+
+                // EUR value
+                let eurHtml;
+                if (isMetal && gv !== null) {
+                    eurHtml = `<div class="m-val-number currency-eur">€${gv.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                               <div class="m-val-sub">${grams}g × €${pricePerGram}/g</div>`;
+                } else if (canEdit) {
+                    eurHtml = `<div class="m-val-number currency-eur">
+                        <input type="number" value="${item.eur || ''}" placeholder="0.00" step="0.01"
+                            onchange="updateField('${item.id}','${owner}','eur',this.value)"
+                            style="background:none;border:none;font:inherit;color:inherit;width:100%;padding:0;" />
+                    </div>`;
+                } else {
+                    eurHtml = eurDisplay
+                        ? `<div class="m-val-number currency-eur">€${eurDisplay.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>`
+                        : `<div class="m-val-number m-zero">—</div>`;
+                }
+
+                // INR value
+                let inrHtml;
+                if (canEdit) {
+                    inrHtml = `<div class="m-val-number currency-inr">
+                        <input type="number" value="${item.inr || ''}" placeholder="0" step="1"
+                            onchange="updateField('${item.id}','${owner}','inr',this.value)"
+                            style="background:none;border:none;font:inherit;color:inherit;width:100%;padding:0;" />
+                    </div>`;
+                } else {
+                    inrHtml = inrDisplay
+                        ? `<div class="m-val-number currency-inr">₹${inrDisplay.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>`
+                        : `<div class="m-val-number m-zero">—</div>`;
+                }
+
+                // Notes
+                const notesHtml = canEdit
+                    ? `<input type="text" value="${escHtml(item.notes || '')}" placeholder="Add notes..."
+                        onchange="updateField('${item.id}','${owner}','notes',this.value)"
+                        style="background:none;border:none;font:italic 12px/'DM Sans',sans-serif;color:var(--text-secondary);width:100%;padding:2px 0;" />`
+                    : item.notes
+                        ? `<span style="font-size:12px;color:var(--text-secondary);font-style:italic;">${escHtml(item.notes)}</span>`
+                        : '';
+
+                const deleteBtn = canEdit
+                    ? `<button class="m-delete-btn" onclick="deleteRow('${item.id}','${owner}')" title="Delete">✕</button>`
+                    : '';
+
+                return `<div class="m-card">
+                    <div class="m-card-header">
+                        <div style="flex:1;">${nameHtml}</div>
+                        ${catBadge(item.category)}
+                    </div>
+                    <div class="m-card-values">
+                        <div class="m-val-block">
+                            <div class="m-val-label">€ Euro</div>
+                            ${eurHtml}
+                        </div>
+                        <div class="m-val-block">
+                            <div class="m-val-label">₹ INR</div>
+                            ${inrHtml}
+                        </div>
+                    </div>
+                    ${notesHtml || deleteBtn ? `<div class="m-card-footer">
+                        <div class="m-notes">${notesHtml}</div>
+                        ${deleteBtn}
+                    </div>` : ''}
+                </div>`;
+            }).join('');
+
+            // Totals bar
+            const eurTotal = items.reduce((s, i) => s + eurVal(i), 0);
+            const inrTotal = items.reduce((s, i) => s + (parseFloat(i.inr) || 0), 0);
+            const allInEur = eurTotal + inrTotal / fx;
+            const totalsHtml = `<div class="m-card-totals">
+                <div class="m-total-item">
+                    <div class="m-total-label">€ Total</div>
+                    <div class="m-total-value currency-eur">€${eurTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                </div>
+                <div class="m-total-item">
+                    <div class="m-total-label">₹ Total</div>
+                    <div class="m-total-value currency-inr">₹${inrTotal.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+                </div>
+                <div class="m-total-item">
+                    <div class="m-total-label">Combined €</div>
+                    <div class="m-total-value" style="color:var(--accent-gold)">€${allInEur.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                </div>
+            </div>`;
+
+            return cardsHtml + totalsHtml;
         }
 
         function renderFooter(items) {
@@ -1577,22 +1897,18 @@
         }
 
         function renderTables() {
-            ['raviBody', 'raviBody2'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = state.ravi.map(i => renderRow(i, 'ravi')).join('');
-            });
-            ['supriyaBody', 'supriyaBody2'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = state.supriya.map(i => renderRow(i, 'supriya')).join('');
-            });
-            ['raviFooter', 'raviFooter2'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = renderFooter(state.ravi);
-            });
-            ['supriyaFooter', 'supriyaFooter2'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = renderFooter(state.supriya);
-            });
+            const raviBody = document.getElementById('raviBody');
+            if (raviBody) raviBody.innerHTML = state.ravi.map(i => renderRow(i, 'ravi')).join('');
+            const supriyaBody = document.getElementById('supriyaBody');
+            if (supriyaBody) supriyaBody.innerHTML = state.supriya.map(i => renderRow(i, 'supriya')).join('');
+            const raviFooter = document.getElementById('raviFooter');
+            if (raviFooter) raviFooter.innerHTML = renderFooter(state.ravi);
+            const supriyaFooter = document.getElementById('supriyaFooter');
+            if (supriyaFooter) supriyaFooter.innerHTML = renderFooter(state.supriya);
+            const raviCards = document.getElementById('raviCards');
+            if (raviCards) raviCards.innerHTML = renderMobileCards(state.ravi, 'ravi');
+            const supriyaCards = document.getElementById('supriyaCards');
+            if (supriyaCards) supriyaCards.innerHTML = renderMobileCards(state.supriya, 'supriya');
         }
 
         function getGoldPerGram() { return parseFloat(document.getElementById('goldPerGram').value) || 0; }
@@ -1801,6 +2117,7 @@
 
         // ─── MODAL ───────────────────────────────────────────────────────────────────
         function openAddModal(owner) {
+            if (!isMainUser) return;
             document.getElementById('fOwner').value = owner === 'Supriya' ? 'Supriya' : 'Ravi';
             document.getElementById('fPlace').value = '';
             document.getElementById('fCategory').value = 'stocks';
@@ -1863,7 +2180,11 @@
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
-            document.body.className = tab === 'combined' ? '' : `tab-${tab}`;
+            const combined = document.querySelector('.view-combined');
+            if (combined) {
+                combined.classList.remove('tab-ravi', 'tab-supriya');
+                if (tab !== 'combined') combined.classList.add('tab-' + tab);
+            }
         }
 
         // ─── IMPORT / EXPORT ─────────────────────────────────────────────────────────
@@ -1875,7 +2196,10 @@
             a.click(); URL.revokeObjectURL(url);
         }
 
-        function importData() { document.getElementById('importFile').click(); }
+        function importData() {
+            if (!isMainUser) return;
+            document.getElementById('importFile').click();
+        }
 
         function handleImport(e) {
             const file = e.target.files[0]; if (!file) return;
@@ -1923,9 +2247,14 @@
         }
 
         // Handle page load - if logged in, sync and refresh rates
-        (async function() {
+        (async function () {
             if (await checkAuth()) {
                 document.getElementById('loginOverlay').classList.add('hidden');
+                const { data: { session } } = await sbClient.auth.getSession();
+                if (session && session.user) {
+                    isMainUser = session.user.email.toLowerCase() === 'ravindraten@gmail.com';
+                }
+                updateUIPermissions();
                 await initSync();
                 await fetchAllRates();
             }
