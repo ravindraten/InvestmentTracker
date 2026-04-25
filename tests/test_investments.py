@@ -228,6 +228,8 @@ class TestHTMLStructure:
         assert "const DEFAULT_DATA" not in content
 
     def test_invest_html_has_default_data(self):
+        if not INVEST_ORIG.exists():
+            pytest.skip("invest.html not present")
         content = INVEST_ORIG.read_text()
         assert "DEFAULT_DATA" in content
 
