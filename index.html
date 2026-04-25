@@ -1480,12 +1480,14 @@
 
         let isMainUser = false;
 
-        function updateUIPermissions() {
+        function updateUIPermissions(email) {
             if (isMainUser) {
                 document.body.classList.add('main-user');
             } else {
                 document.body.classList.remove('main-user');
             }
+
+            if (!email) return;
 
             const addBtn = document.querySelector('button[onclick="openAddModal()"]');
             const addRowRaviBtn = document.getElementById('addRowRavi');
@@ -1516,6 +1518,24 @@
                     importBtn.classList.add('hidden');
                 }
             }
+
+            const emailLower = email.toLowerCase();
+            if (emailLower === 'ravindraten@gmail.com') {
+                const combinedTab = document.querySelector('.tab:first-child');
+                if (combinedTab) {
+                    switchTab('combined', combinedTab);
+                }
+            } else if (emailLower === 'ravindra.nayak@outlook.com') {
+                const raviTab = document.querySelector('.tab:nth-child(2)');
+                if (raviTab) {
+                    switchTab('ravi', raviTab);
+                }
+            } else {
+                const supriyaTab = document.querySelector('.tab:nth-child(3)');
+                if (supriyaTab) {
+                    switchTab('supriya', supriyaTab);
+                }
+            }
         }
 
         async function handleLogin(e) {
@@ -1534,7 +1554,7 @@
 
                 isMainUser = email.toLowerCase() === 'ravindraten@gmail.com';
                 document.getElementById('loginOverlay').classList.add('hidden');
-                updateUIPermissions();
+                updateUIPermissions(email);
                 await initSync();
             } catch (err) {
                 status.textContent = err.message || 'Login failed';
