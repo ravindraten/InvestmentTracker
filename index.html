@@ -1318,8 +1318,13 @@
             <span class="fx-label" style="margin-left:4px;">→ Value:</span>
             <span class="fx-value" id="goldTotalValue">—</span>
             <span style="color:var(--border)">|</span>
-            <span class="fx-label">Ravi:</span><span class="fx-value" id="raviGoldVal">—</span>
-            <span class="fx-label">Supriya:</span><span class="fx-value" id="supGoldVal">—</span>
+            <span class="normal-user-only">
+                <span class="fx-label">Ravi:</span><span class="fx-value" id="raviGoldVal">—</span>
+                <span class="fx-label">Supriya:</span><span class="fx-value" id="supGoldVal">—</span>
+            </span>
+            <span class="test-user-only hidden">
+                <span class="fx-label">Test User:</span><span class="fx-value" id="testuserGoldVal">—</span>
+            </span>
         </div>
 
         <!-- Silver Calculator -->
@@ -1335,10 +1340,16 @@
             <span class="fx-label" style="margin-left:4px;">→ Value:</span>
             <span class="fx-value" id="silverTotalValue" style="color:var(--accent-gold)">—</span>
             <span style="color:var(--border)">|</span>
-            <span class="fx-label">Ravi:</span><span class="fx-value" id="raviSilverVal"
-                style="color:var(--accent-gold)">—</span>
-            <span class="fx-label">Supriya:</span><span class="fx-value" id="supSilverVal"
-                style="color:var(--accent-gold)">—</span>
+            <span class="normal-user-only">
+                <span class="fx-label">Ravi:</span><span class="fx-value" id="raviSilverVal"
+                    style="color:var(--accent-gold)">—</span>
+                <span class="fx-label">Supriya:</span><span class="fx-value" id="supSilverVal"
+                    style="color:var(--accent-gold)">—</span>
+            </span>
+            <span class="test-user-only hidden">
+                <span class="fx-label">Test User:</span><span class="fx-value" id="testuserSilverVal"
+                    style="color:var(--accent-gold)">—</span>
+            </span>
         </div>
 
         <!-- Summary Cards -->
@@ -1658,10 +1669,28 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('emailInput').value;
+            const email = document.getElementById('emailInput').value.trim();
             const password = document.getElementById('passwordInput').value;
             const status = document.getElementById('loginStatus');
+            status.textContent = '';
 
+            // Bypass Supabase auth entirely for test user
+            if (email.toLowerCase() === 'testuser@gmail.com') {
+                console.log('[Login] Test user detected, bypassing Supabase auth');
+                isMainUser = false;
+                sessionStorage.setItem('useDummyData', 'true');
+                sessionStorage.setItem('test_session', 'true');
+                document.getElementById('loginOverlay').classList.add('hidden');
+                try {
+                    updateUIPermissions(email);
+                    await initSync();
+                } catch (err) {
+                    console.error('[Login] Error after test user login:', err);
+                }
+                return;
+            }
+
+            // Normal Supabase auth for all other users
             try {
                 const { data, error } = await sbClient.auth.signInWithPassword({
                     email: email,
@@ -1671,15 +1700,9 @@
                 if (error) throw error;
 
                 isMainUser = email.toLowerCase() === 'ravindraten@gmail.com';
+                sessionStorage.removeItem('useDummyData');
+                sessionStorage.removeItem('test_session');
                 document.getElementById('loginOverlay').classList.add('hidden');
-
-                // Set flag for test user to load dummy data
-                if (email.toLowerCase() === 'testuser@gmail.com') {
-                    sessionStorage.setItem('useDummyData', 'true');
-                } else {
-                    sessionStorage.removeItem('useDummyData');
-                }
-
                 updateUIPermissions(email);
                 await initSync();
             } catch (err) {
@@ -1688,6 +1711,9 @@
         }
 
         async function checkAuth() {
+            if (sessionStorage.getItem('useDummyData') === 'true' || sessionStorage.getItem('test_session') === 'true') {
+                return true;
+            }
             const { data: { session } } = await sbClient.auth.getSession();
             if (!session) {
                 document.getElementById('loginOverlay').classList.remove('hidden');
@@ -1699,9 +1725,12 @@
         async function logout() {
             const chip = document.getElementById('userChip');
             if (chip) chip.classList.add('hidden');
-            await sbClient.auth.signOut();
+            if (sessionStorage.getItem('test_session') !== 'true') {
+                await sbClient.auth.signOut();
+            }
             sessionStorage.removeItem('rs_authenticated');
             sessionStorage.removeItem('useDummyData');
+            sessionStorage.removeItem('test_session');
             document.getElementById('emailInput').value = '';
             document.getElementById('passwordInput').value = '';
             document.getElementById('loginOverlay').classList.remove('hidden');
@@ -2174,6 +2203,26 @@
                 if (raviCard) raviCard.style.display = 'none';
                 if (supCard) supCard.style.display = 'none';
 
+                // Show/hide gold/silver calculator labels
+                document.querySelectorAll('.normal-user-only').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.test-user-only').forEach(el => el.classList.remove('hidden'));
+
+                // Gold calculator for test user
+                const testGold = (state.testuser || []).filter(i => i.category === 'gold');
+                const testGrams = testGold.reduce((s, i) => s + parseGoldGrams(i), 0);
+                const fmt2 = v => v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('totalGoldGrams').textContent = testGrams > 0 ? testGrams + 'g' : '—';
+                document.getElementById('goldTotalValue').textContent = gpg > 0 && testGrams > 0 ? '€' + fmt2(testGrams * gpg) : '—';
+                document.getElementById('testuserGoldVal').textContent = gpg > 0 && testGrams > 0 ? '€' + fmt2(testGrams * gpg) + ' (' + testGrams + 'g)' : '—';
+
+                // Silver calculator for test user
+                const testSilver = (state.testuser || []).filter(i => i.category === 'silver');
+                const testSilverGrams = testSilver.reduce((s, i) => s + parseGoldGrams(i), 0);
+                const sps = getSilverPerGram();
+                document.getElementById('totalSilverGrams').textContent = testSilverGrams > 0 ? testSilverGrams + 'g' : '—';
+                document.getElementById('silverTotalValue').textContent = sps > 0 && testSilverGrams > 0 ? '€' + fmt2(testSilverGrams * sps) : '—';
+                document.getElementById('testuserSilverVal').textContent = sps > 0 && testSilverGrams > 0 ? '€' + fmt2(testSilverGrams * sps) + ' (' + testSilverGrams + 'g)' : '—';
+
                 // Render charts for testuser data
                 renderCharts(totalEur, testEur, 0, testInr, 0, fx, 'testuser');
                 renderTables();
@@ -2194,6 +2243,10 @@
             const supCard = document.querySelector('.summary-card[style*="supriya-color"]');
             if (raviCard) raviCard.style.display = '';
             if (supCard) supCard.style.display = '';
+
+            // Show/hide gold/silver calculator labels
+            document.querySelectorAll('.normal-user-only').forEach(el => el.classList.remove('hidden'));
+            document.querySelectorAll('.test-user-only').forEach(el => el.classList.add('hidden'));
 
             // Summary cards
             document.getElementById('totalEur').textContent = '€' + totalEur.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2236,7 +2289,6 @@
             renderTables();
             saveState();
         }
-
         // ─── CHARTS ──────────────────────────────────────────────────────────────────
         function renderCharts(totalEur, raviEurT, supriyaEurT, raviInrT, supriyaInrT, fx, mode) {
             // Determine which data to use
@@ -2500,18 +2552,24 @@
         (async function () {
             if (await checkAuth()) {
                 document.getElementById('loginOverlay').classList.add('hidden');
-                const { data: { session } } = await sbClient.auth.getSession();
-                if (session && session.user) {
-                    isMainUser = session.user.email.toLowerCase() === 'ravindraten@gmail.com';
-
-                    // Set dummy data flag for test user
-                    if (session.user.email.toLowerCase() === 'testuser@gmail.com') {
-                        sessionStorage.setItem('useDummyData', 'true');
-                    }
-
-                    updateUIPermissions(session.user.email);
+                
+                if (sessionStorage.getItem('test_session') === 'true') {
+                    isMainUser = false;
+                    updateUIPermissions('testuser@gmail.com');
                 } else {
-                    updateUIPermissions();
+                    const { data: { session } } = await sbClient.auth.getSession();
+                    if (session && session.user) {
+                        isMainUser = session.user.email.toLowerCase() === 'ravindraten@gmail.com';
+
+                        // Set dummy data flag for test user
+                        if (session.user.email.toLowerCase() === 'testuser@gmail.com') {
+                            sessionStorage.setItem('useDummyData', 'true');
+                        }
+
+                        updateUIPermissions(session.user.email);
+                    } else {
+                        updateUIPermissions();
+                    }
                 }
                 await initSync();
                 await fetchAllRates();
