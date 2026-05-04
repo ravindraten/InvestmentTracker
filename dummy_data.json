@@ -1,0 +1,62 @@
+{
+  "testuser": [
+    {
+      "id": "dumt001",
+      "place": "Test Trading 212",
+      "category": "stocks",
+      "eur": 10000,
+      "inr": 0,
+      "notes": "Test user - Tech stocks"
+    },
+    {
+      "id": "dumt002",
+      "place": "Test Coinbase",
+      "category": "crypto",
+      "eur": 2000,
+      "inr": 0,
+      "notes": "Test user - Bitcoin & Ethereum"
+    },
+    {
+      "id": "dumt003",
+      "place": "Test NPS",
+      "category": "epf",
+      "eur": 0,
+      "inr": 1000000,
+      "notes": "Test user - National Pension System"
+    },
+    {
+      "id": "dumt004",
+      "place": "Test GoldRepublic",
+      "category": "gold",
+      "eur": 150,
+      "inr": 0,
+      "notes": "Test user - 150 units gold"
+    },
+    {
+      "id": "dumt005",
+      "place": "Test HDFC NRO",
+      "category": "savings",
+      "eur": 0,
+      "inr": 1200000,
+      "notes": "Test user - Savings account"
+    },
+    {
+      "id": "dumt006",
+      "place": "Test Solid Gold",
+      "category": "gold",
+      "eur": 100,
+      "inr": 0,
+      "notes": "Test user - 100g solid gold"
+    },
+    {
+      "id": "dumt007",
+      "place": "Test ABN AMRO",
+      "category": "savings",
+      "eur": 3000,
+      "inr": 0,
+      "notes": "Test user - Dutch savings"
+    }
+  ],
+  "lastUpdated": "2026-05-04T10:00:00.000Z",
+  "fxRate": 92.50
+}
