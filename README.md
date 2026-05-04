@@ -15,6 +15,18 @@
 2. Click **Add user**
 3. Enter email and password for each user (e.g., ravi@example.com)
 
+### 3. Test User (No Auth Required)
+
+The app includes a special **Test User** (`testuser@gmail.com`) that bypasses Supabase authentication entirely:
+
+- **No setup required** - just login with `testuser@gmail.com` (any password works)
+- **Dummy data** - pre-loaded with sample investments from `dummy_data.json`
+- **Local storage** - data is saved to browser localStorage, not Supabase
+- **Edit access** - test user can add/edit/delete their own dummy investments
+- **Isolated view** - only sees the "Test User" tab with their own data
+
+To customize the dummy data, edit `dummy_data.json` before logging in as test user.
+
 ### 3. Enable Row Level Security (Recommended)
 
 1. Go to **SQL Editor**
@@ -42,6 +54,7 @@ FOR ALL USING (auth.uid() IS NOT NULL);
 - **Real authentication** - Not just a PIN, actual Supabase Auth
 - **Cloud sync** - Data syncs across devices
 - **Multiple users** - Can create separate accounts for Ravi and Supriya
+- **Test User mode** - No-auth demo user with dummy data, perfect for testing
 
 ## Troubleshooting
 
