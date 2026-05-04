@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supriya & Ravindra Investments</title>
+    <title>Investments Tracker</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap"
         rel="stylesheet">
@@ -1257,8 +1257,8 @@
     <!-- Login Gate -->
     <div id="loginOverlay">
         <div class="logo" style="align-items: center; margin-bottom: 20px;">
-            <div class="logo-monogram">Supriya & Ravindra</div>
-            <div class="logo-title" style="font-size: 28px;">Investments</div>
+            <div class="logo-monogram"></div>
+            <div class="logo-title" style="font-size: 28px;">Investments Tracker</div>
         </div>
         <div class="login-box">
             <div class="card-label">Sign In</div>
@@ -1276,8 +1276,8 @@
         <!-- Header -->
         <header>
             <div class="logo">
-                <div class="logo-monogram">Supriya & Ravindra</div>
-                <div class="logo-title">Investments <span id="syncStatus"
+                <div class="logo-monogram" id="logoMonogram">Supriya & Ravindra</div>
+                <div class="logo-title">Investments Tracker<span id="syncStatus"
                         style="font-size:10px; vertical-align:middle; margin-left:8px; padding:2px 6px; border-radius:4px; font-family:'DM Mono',monospace; font-weight:400; opacity:0.8; background:#eee; color:#999;">Checking...</span>
                 </div>
                 <div class="logo-subtitle last-updated" id="lastUpdated">Loading...</div>
@@ -1487,6 +1487,8 @@
                     <div class="section-title">
                         Test User <span class="owner-badge" style="background: #6c757d; color: white;">TEST</span>
                     </div>
+                    <button class="add-row-btn hidden" id="addRowTestUser" onclick="openAddModal('TestUser')">＋ Add
+                        investment</button>
                 </div>
                 <div class="table-wrap">
                     <table id="testuserTable">
@@ -1583,11 +1585,12 @@
         }
 
         let isMainUser = false;
+        let isTestUser = false;
 
         // USER ROLES:
         //   ravindraten@gmail.com     → main user, all tabs, full edit
         //   ravindra.nayak@outlook.com → read-only, Ravindra tab default, only Ravindra tab visible
-        //   testuser@gmail.com       → read-only, dummy data, all tabs visible
+        //   testuser@gmail.com       → can edit dummy data, all tabs visible
         //   anyone else               → read-only, Supriya tab default, only Supriya tab visible
 
         function getEmailRole(email) {
@@ -1604,7 +1607,7 @@
             const avatar = document.getElementById('userAvatar');
             const label = document.getElementById('userEmail');
             if (!chip || !email) return;
-            // Avatar: first letter of name part
+            // Avatar: show first letter only
             const initial = email.charAt(0).toUpperCase();
             avatar.textContent = initial;
             // Label: show name before @ if short enough, else full email
@@ -1617,24 +1620,37 @@
         function updateUIPermissions(email) {
             const role = getEmailRole(email);
             isMainUser = (role === 'main');
+            isTestUser = (role === 'test-user');
 
             // body class for CSS hooks
             document.body.classList.toggle('main-user', isMainUser);
+            document.body.classList.toggle('test-user', isTestUser);
 
-            // Edit buttons — only main user
+            // Update logo text for test user
+            const logoMonogram = document.getElementById('logoMonogram');
+            if (logoMonogram) {
+                logoMonogram.textContent = isTestUser ? 'Test User' : 'Supriya & Ravindra';
+            }
+
+            // Edit buttons — main user and test user can edit
+            const canEdit = isMainUser || isTestUser;
             const addBtn = document.querySelector('button[onclick="openAddModal()"]');
             const addRowRaviBtn = document.getElementById('addRowRavi');
             const addRowSupriyaBtn = document.getElementById('addRowSupriya');
+            const addRowTestUserBtn = document.getElementById('addRowTestUser');
             const addRowBtns = document.querySelectorAll('.add-row-btn');
             const importBtn = document.querySelector('button[onclick="importData()"]');
             const logoutBtn = document.getElementById('logoutBtn');
             const refreshBtn = document.querySelector('button[onclick="refreshAllRates()"]');
 
-            [addBtn, addRowRaviBtn, addRowSupriyaBtn, importBtn].forEach(el => {
-                if (!el) return;
-                el.classList.toggle('hidden', !isMainUser);
-            });
-            addRowBtns.forEach(btn => btn.classList.toggle('hidden', !isMainUser));
+            // Main add button - show for main user only (adds to Ravi/Supriya)
+            if (addBtn) addBtn.classList.toggle('hidden', !isMainUser);
+            // Tab-specific add buttons
+            if (addRowRaviBtn) addRowRaviBtn.classList.toggle('hidden', !isMainUser);
+            if (addRowSupriyaBtn) addRowSupriyaBtn.classList.toggle('hidden', !isMainUser);
+            if (addRowTestUserBtn) addRowTestUserBtn.classList.toggle('hidden', !isTestUser);
+            if (importBtn) importBtn.classList.toggle('hidden', !isMainUser);
+            addRowBtns.forEach(btn => btn.classList.toggle('hidden', !canEdit));
             if (logoutBtn) logoutBtn.classList.remove('hidden'); // always show logout
             if (refreshBtn) refreshBtn.classList.remove('hidden');
 
@@ -1803,11 +1819,18 @@
                 const response = await fetch('dummy_data.json');
                 if (!response.ok) throw new Error('Failed to load dummy data');
                 const data = await response.json();
+                // Load saved testuser data from localStorage if available
+                const savedTestUser = loadTestUserData();
+                if (savedTestUser) {
+                    data.testuser = savedTestUser;
+                }
                 return data;
             } catch (e) {
                 console.error('Error loading dummy data:', e);
+                // Try to load from localStorage
+                const savedTestUser = loadTestUserData();
                 return {
-                    testuser: [
+                    testuser: savedTestUser || [
                         { id: uid(), place: 'Test Trading 212', category: 'stocks', eur: 100, inr: 0, notes: 'Fallback dummy data' },
                         { id: uid(), place: 'Test Savings', category: 'savings', eur: 0, inr: 12000, notes: 'Fallback dummy data' }
                     ],
@@ -1818,6 +1841,33 @@
         }
 
         function uid() { return Math.random().toString(36).slice(2, 9); }
+
+        function saveTestUserData() {
+            try {
+                const testData = {
+                    testuser: state.testuser || [],
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('testuser_data', JSON.stringify(testData));
+            } catch (e) {
+                console.error('Error saving test user data:', e);
+            }
+        }
+
+        function loadTestUserData() {
+            try {
+                const saved = localStorage.getItem('testuser_data');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.testuser && Array.isArray(parsed.testuser)) {
+                        return parsed.testuser;
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading test user data:', e);
+            }
+            return null;
+        }
 
         async function saveStateCloud() {
             if (!sbClient) {
@@ -1834,7 +1884,7 @@
             updateLastUpdated();
         }
 
-        let state = { ravi: [], supriya: [], lastUpdated: new Date().toISOString(), fxRate: 90.5 };
+        let state = { ravi: [], supriya: [], testuser: [], lastUpdated: new Date().toISOString(), fxRate: 90.5 };
 
         function saveState() {
             state.lastUpdated = new Date().toISOString();
@@ -1932,7 +1982,7 @@
             const grams = isMetal ? parseGoldGrams(item) : 0;
             const pricePerGram = isGold ? getGoldPerGram() : getSilverPerGram();
             const gv = isMetal && grams > 0 && pricePerGram > 0 ? grams * pricePerGram : null;
-            const canEdit = isMainUser;
+            const canEdit = isMainUser || (isTestUser && owner === 'testuser');
 
             // EUR cell
             const eurCell = isMetal && gv !== null
@@ -1985,7 +2035,7 @@
             if (!items || items.length === 0) {
                 return '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No entries yet</div>';
             }
-            const canEdit = isMainUser;
+            const canEdit = isMainUser || (isTestUser && owner === 'testuser');
             const fx = getFX();
 
             const cardsHtml = items.map(item => {
@@ -2398,7 +2448,11 @@
 
         // ─── CRUD ────────────────────────────────────────────────────────────────────
         function updateField(id, owner, field, value) {
-            const arr = owner === 'ravi' ? state.ravi : state.supriya;
+            let arr;
+            if (owner === 'ravi') arr = state.ravi;
+            else if (owner === 'supriya') arr = state.supriya;
+            else if (owner === 'testuser') arr = state.testuser;
+            else return;
             const item = arr.find(i => i.id === id);
             if (!item) return;
             // place and notes are strings; everything else is numeric
@@ -2407,20 +2461,35 @@
             } else {
                 item[field] = parseFloat(value) || 0;
             }
+            if (owner === 'testuser') saveTestUserData();
             recalcAll();
         }
 
         function deleteRow(id, owner) {
             if (!confirm('Remove this entry?')) return;
             if (owner === 'ravi') state.ravi = state.ravi.filter(i => i.id !== id);
-            else state.supriya = state.supriya.filter(i => i.id !== id);
+            else if (owner === 'supriya') state.supriya = state.supriya.filter(i => i.id !== id);
+            else if (owner === 'testuser') {
+                state.testuser = (state.testuser || []).filter(i => i.id !== id);
+                saveTestUserData();
+            }
             recalcAll();
         }
 
         // ─── MODAL ───────────────────────────────────────────────────────────────────
         function openAddModal(owner) {
-            if (!isMainUser) return;
-            document.getElementById('fOwner').value = owner === 'Supriya' ? 'Supriya' : 'Ravi';
+            if (!isMainUser && !(isTestUser && owner === 'TestUser')) return;
+
+            // Update owner dropdown based on user role
+            const fOwnerSelect = document.getElementById('fOwner');
+            fOwnerSelect.innerHTML = '';
+            if (isTestUser) {
+                fOwnerSelect.innerHTML = '<option value="TestUser">Test User</option>';
+                fOwnerSelect.value = 'TestUser';
+            } else {
+                fOwnerSelect.innerHTML = '<option value="Ravi">Ravindra</option><option value="Supriya">Supriya</option>';
+                fOwnerSelect.value = owner === 'Supriya' ? 'Supriya' : 'Ravi';
+            }
             document.getElementById('fPlace').value = '';
             document.getElementById('fCategory').value = 'stocks';
             document.getElementById('fEuro').value = '';
@@ -2473,7 +2542,13 @@
                 notes: document.getElementById('fNotes').value.trim()
             };
             if (owner === 'Supriya') state.supriya.push(item);
-            else state.ravi.push(item);
+            else if (owner === 'TestUser') {
+                if (!state.testuser) state.testuser = [];
+                state.testuser.push(item);
+                saveTestUserData();
+            } else {
+                state.ravi.push(item);
+            }
             closeModal();
             recalcAll();
         }
@@ -2552,7 +2627,7 @@
         (async function () {
             if (await checkAuth()) {
                 document.getElementById('loginOverlay').classList.add('hidden');
-                
+
                 if (sessionStorage.getItem('test_session') === 'true') {
                     isMainUser = false;
                     updateUIPermissions('testuser@gmail.com');
