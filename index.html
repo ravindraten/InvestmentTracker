@@ -338,6 +338,15 @@
             font-weight: 400;
         }
 
+        th.text-right,
+        td.text-right {
+            text-align: right;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
         th:last-child,
         td:last-child {
             text-align: right;
@@ -1434,8 +1443,8 @@
                             <tr>
                                 <th>Investment / Place</th>
                                 <th>Category</th>
-                                <th>Amount (€)</th>
-                                <th>Amount (₹)</th>
+                                <th class="text-right">Amount (€)</th>
+                                <th class="text-right">Amount (₹)</th>
                                 <th>Notes</th>
                                 <th></th>
                             </tr>
@@ -1465,8 +1474,8 @@
                             <tr>
                                 <th>Investment / Place</th>
                                 <th>Category</th>
-                                <th>Amount (€)</th>
-                                <th>Amount (₹)</th>
+                                <th class="text-right">Amount (€)</th>
+                                <th class="text-right">Amount (₹)</th>
                                 <th>Notes</th>
                                 <th></th>
                             </tr>
@@ -1496,9 +1505,10 @@
                             <tr>
                                 <th>Investment / Place</th>
                                 <th>Category</th>
-                                <th>Amount (€)</th>
-                                <th>Amount (₹)</th>
+                                <th class="text-right">Amount (€)</th>
+                                <th class="text-right">Amount (₹)</th>
                                 <th>Notes</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="testuserBody"></tbody>
@@ -1706,6 +1716,12 @@
                 return;
             }
 
+            // Check if Supabase is configured
+            if (!sbClient) {
+                status.textContent = 'Supabase not configured. Cannot login with this email.';
+                return;
+            }
+
             // Normal Supabase auth for all other users
             try {
                 const { data, error } = await sbClient.auth.signInWithPassword({
@@ -1730,12 +1746,22 @@
             if (sessionStorage.getItem('useDummyData') === 'true' || sessionStorage.getItem('test_session') === 'true') {
                 return true;
             }
-            const { data: { session } } = await sbClient.auth.getSession();
-            if (!session) {
+            if (!sbClient) {
                 document.getElementById('loginOverlay').classList.remove('hidden');
                 return false;
             }
-            return true;
+            try {
+                const { data: { session } } = await sbClient.auth.getSession();
+                if (!session) {
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                    return false;
+                }
+                return true;
+            } catch (err) {
+                console.error('Auth check failed:', err);
+                document.getElementById('loginOverlay').classList.remove('hidden');
+                return false;
+            }
         }
 
         async function logout() {
@@ -1986,14 +2012,14 @@
 
             // EUR cell
             const eurCell = isMetal && gv !== null
-                ? `<td style="padding:14px 18px;vertical-align:middle;">
+                ? `<td class="text-right" style="padding:14px 18px;vertical-align:middle;">
         <span class="currency-eur">\u20ac${gv.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         <span style="font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;display:block;margin-top:2px;">${grams}g \u00d7 \u20ac${pricePerGram}/g</span>
       </td>`
                 : canEdit
-                    ? `<td><input class="editable currency-eur" type="number" value="${item.eur || ''}" placeholder="0" step="0.01"
+                    ? `<td class="text-right"><input class="editable currency-eur" type="number" value="${item.eur || ''}" placeholder="0" step="0.01"
         onchange="updateField('${item.id}','${owner}','eur',this.value)" /></td>`
-                    : `<td style="padding:14px 18px;"><span class="currency-eur">${item.eur ? '\u20ac' + Number(item.eur).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span class=\"currency-empty\">\u2014</span>'}</span></td>`;
+                    : `<td class="text-right" style="padding:14px 18px;"><span class="currency-eur">${item.eur ? '\u20ac' + Number(item.eur).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span class=\"currency-empty\">\u2014</span>'}</span></td>`;
 
             // Place cell
             const placeCell = canEdit
@@ -2005,9 +2031,9 @@
 
             // INR cell
             const inrCell = canEdit
-                ? `<input class="editable currency-inr" type="number" value="${item.inr || ''}" placeholder="0" step="1"
+                ? `<input class="editable currency-inr text-right" type="number" value="${item.inr || ''}" placeholder="0" step="1"
                     onchange="updateField('${item.id}','${owner}','inr',this.value)" />`
-                : `<span class="currency-inr">${item.inr ? '\u20b9' + Number(item.inr).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '<span class=\"currency-empty\">\u2014</span>'}</span>`;
+                : `<span class="currency-inr text-right">${item.inr ? '\u20b9' + Number(item.inr).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '<span class=\"currency-empty\">\u2014</span>'}</span>`;
 
             // Notes cell
             const notesCell = canEdit
@@ -2024,7 +2050,7 @@
     <td>${placeCell}</td>
     <td>${catBadge(item.category)}</td>
     ${eurCell}
-    <td>${inrCell}</td>
+    <td class="text-right">${inrCell}</td>
     <td>${notesCell}</td>
     ${deleteCell}
   </tr>`;
@@ -2149,8 +2175,8 @@
             const fx = getFX();
             const allInEur = eurTotal + inrTotal / fx;
             return `<td colspan="2" style="padding:14px 18px;font-size:13px;color:var(--text-muted);">TOTAL</td>
-    <td style="padding:14px 18px;"><span class="currency-eur">€${eurTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
-    <td style="padding:14px 18px;"><span class="currency-inr">₹${inrTotal.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span></td>
+    <td class="text-right" style="padding:14px 18px;"><span class="currency-eur">€${eurTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
+    <td class="text-right" style="padding:14px 18px;"><span class="currency-inr">₹${inrTotal.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span></td>
     <td style="padding:14px 18px;color:var(--text-muted);font-size:12px;">≈ €${allInEur.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total</td>
     <td></td>`;
         }
@@ -2180,14 +2206,14 @@
 
         function getGoldPerGram() { return parseFloat(document.getElementById('goldPerGram').value) || 0; }
 
-        // Parse grams from place field — user types e.g. "Solid Gold 200g" or "GoldRepublic 170" or "Holland Gold (20)"
+        // Parse grams from place or notes field — e.g. "Solid Gold 200g" or "500g silver"
         function parseGoldGrams(item) {
-            const src = item.place;
+            const src = (item.place || '') + ' ' + (item.notes || '');
             const patterns = [
-                /(d+(?:\.\d+)?)\s*g\b/i,
+                /(\d+(?:\.\d+)?)\s*g\b/i,
                 /\((\d+(?:\.\d+)?)\)/,
-                /(d+(?:\.\d+)?)\s*units/i,
-                /(d+(?:\.\d+)?)\s*grams?/i,
+                /(\d+(?:\.\d+)?)\s*units/i,
+                /(\d+(?:\.\d+)?)\s*grams?/i,
                 /\b(\d+(?:\.\d+)?)$/,
                 /^(\d+(?:\.\d+)?)\b/,
             ];
@@ -2631,20 +2657,27 @@
                 if (sessionStorage.getItem('test_session') === 'true') {
                     isMainUser = false;
                     updateUIPermissions('testuser@gmail.com');
-                } else {
-                    const { data: { session } } = await sbClient.auth.getSession();
-                    if (session && session.user) {
-                        isMainUser = session.user.email.toLowerCase() === 'ravindraten@gmail.com';
+                } else if (sbClient) {
+                    try {
+                        const { data: { session } } = await sbClient.auth.getSession();
+                        if (session && session.user) {
+                            isMainUser = session.user.email.toLowerCase() === 'ravindraten@gmail.com';
 
-                        // Set dummy data flag for test user
-                        if (session.user.email.toLowerCase() === 'testuser@gmail.com') {
-                            sessionStorage.setItem('useDummyData', 'true');
+                            // Set dummy data flag for test user
+                            if (session.user.email.toLowerCase() === 'testuser@gmail.com') {
+                                sessionStorage.setItem('useDummyData', 'true');
+                            }
+
+                            updateUIPermissions(session.user.email);
+                        } else {
+                            updateUIPermissions();
                         }
-
-                        updateUIPermissions(session.user.email);
-                    } else {
+                    } catch (err) {
+                        console.error('Session check failed:', err);
                         updateUIPermissions();
                     }
+                } else {
+                    updateUIPermissions();
                 }
                 await initSync();
                 await fetchAllRates();
