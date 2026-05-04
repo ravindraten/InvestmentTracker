@@ -787,6 +787,21 @@
             display: none;
         }
 
+        /* Test User tab: hide ravi and supriya sections */
+        .view-combined.tab-testuser .section-ravi,
+        .view-combined.tab-testuser .section-supriya {
+            display: none;
+        }
+
+        /* Test User section */
+        .section-testuser {
+            display: none;
+        }
+
+        .view-combined.tab-testuser .section-testuser {
+            display: block;
+        }
+
         /* Responsive Improvements */
         @media (max-width: 768px) {
             .wrapper {
@@ -1368,6 +1383,7 @@
             <button class="tab active" onclick="switchTab('combined', this)">Combined</button>
             <button class="tab" onclick="switchTab('ravi', this)">Ravindra</button>
             <button class="tab" onclick="switchTab('supriya', this)">Supriya</button>
+            <button class="tab hidden" onclick="switchTab('testuser', this)">Test User</button>
         </div>
 
         <!-- COMBINED VIEW -->
@@ -1453,6 +1469,33 @@
                     <button class="add-row-btn hidden" onclick="openAddModal('Supriya')">＋ Add investment</button>
                 </div>
             </div>
+
+            <!-- Test User section -->
+            <div class="section-testuser">
+                <div class="section-header">
+                    <div class="section-title">
+                        Test User <span class="owner-badge" style="background: #6c757d; color: white;">TEST</span>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table id="testuserTable">
+                        <thead>
+                            <tr>
+                                <th>Investment / Place</th>
+                                <th>Category</th>
+                                <th>Amount (€)</th>
+                                <th>Amount (₹)</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="testuserBody"></tbody>
+                        <tfoot>
+                            <tr class="total-row" id="testuserFooter"></tr>
+                        </tfoot>
+                    </table>
+                    <div class="mobile-cards" id="testuserCards"></div>
+                </div>
+            </div>
         </div>
 
 
@@ -1533,6 +1576,7 @@
         // USER ROLES:
         //   ravindraten@gmail.com     → main user, all tabs, full edit
         //   ravindra.nayak@outlook.com → read-only, Ravindra tab default, only Ravindra tab visible
+        //   testuser@gmail.com       → read-only, dummy data, all tabs visible
         //   anyone else               → read-only, Supriya tab default, only Supriya tab visible
 
         function getEmailRole(email) {
@@ -1540,6 +1584,7 @@
             const e = email.toLowerCase();
             if (e === 'ravindraten@gmail.com') return 'main';
             if (e === 'ravindra.nayak@outlook.com') return 'ravi-viewer';
+            if (e === 'testuser@gmail.com') return 'test-user';
             return 'supriya-viewer';
         }
 
@@ -1582,19 +1627,30 @@
             if (logoutBtn) logoutBtn.classList.remove('hidden'); // always show logout
             if (refreshBtn) refreshBtn.classList.remove('hidden');
 
-            // Tab visibility — non-main users only see their own tab
-            // All tabs always visible for everyone — just set the default active tab per role
+            // Tab visibility
             const tabCombined = document.querySelector('.tab:nth-child(1)');
             const tabRavi = document.querySelector('.tab:nth-child(2)');
             const tabSupriya = document.querySelector('.tab:nth-child(3)');
-            [tabCombined, tabRavi, tabSupriya].forEach(t => t && t.classList.remove('hidden'));
+            const tabTestUser = document.querySelector('.tab:nth-child(4)');
 
-            if (role === 'main') {
-                switchTab('combined', tabCombined);
-            } else if (role === 'ravi-viewer') {
-                switchTab('ravi', tabRavi);
+            // Hide all tabs first
+            [tabCombined, tabRavi, tabSupriya, tabTestUser].forEach(t => t && t.classList.add('hidden'));
+
+            if (role === 'test-user') {
+                // Test user: only show Test User tab
+                if (tabTestUser) tabTestUser.classList.remove('hidden');
+                switchTab('testuser', tabTestUser);
             } else {
-                switchTab('supriya', tabSupriya);
+                // Other users: show all tabs except Test User
+                [tabCombined, tabRavi, tabSupriya].forEach(t => t && t.classList.remove('hidden'));
+
+                if (role === 'main') {
+                    switchTab('combined', tabCombined);
+                } else if (role === 'ravi-viewer') {
+                    switchTab('ravi', tabRavi);
+                } else {
+                    switchTab('supriya', tabSupriya);
+                }
             }
 
             if (email) setUserChip(email);
@@ -1616,6 +1672,14 @@
 
                 isMainUser = email.toLowerCase() === 'ravindraten@gmail.com';
                 document.getElementById('loginOverlay').classList.add('hidden');
+
+                // Set flag for test user to load dummy data
+                if (email.toLowerCase() === 'testuser@gmail.com') {
+                    sessionStorage.setItem('useDummyData', 'true');
+                } else {
+                    sessionStorage.removeItem('useDummyData');
+                }
+
                 updateUIPermissions(email);
                 await initSync();
             } catch (err) {
@@ -1637,6 +1701,7 @@
             if (chip) chip.classList.add('hidden');
             await sbClient.auth.signOut();
             sessionStorage.removeItem('rs_authenticated');
+            sessionStorage.removeItem('useDummyData');
             document.getElementById('emailInput').value = '';
             document.getElementById('passwordInput').value = '';
             document.getElementById('loginOverlay').classList.remove('hidden');
@@ -1644,6 +1709,16 @@
 
         async function initSync() {
             const statusBadge = document.getElementById('syncStatus');
+            const useDummy = sessionStorage.getItem('useDummyData') === 'true';
+
+            if (useDummy) {
+                // Load dummy data for test user
+                if (statusBadge) { statusBadge.textContent = 'Demo Mode'; statusBadge.style.background = '#e2e3e5'; statusBadge.style.color = '#383d41'; }
+                state = await loadDummyData();
+                recalcAll();
+                return;
+            }
+
             if (!sbClient) {
                 console.warn('Supabase not configured. Using local storage.');
                 if (statusBadge) { statusBadge.textContent = 'Offline (Local)'; statusBadge.style.background = '#f8d7da'; statusBadge.style.color = '#721c24'; }
@@ -1693,6 +1768,27 @@
             localStorage.removeItem('rs_investments');
             return { ravi: [], supriya: [], lastUpdated: new Date().toISOString(), fxRate: 90.5 };
         }
+
+        async function loadDummyData() {
+            try {
+                const response = await fetch('dummy_data.json');
+                if (!response.ok) throw new Error('Failed to load dummy data');
+                const data = await response.json();
+                return data;
+            } catch (e) {
+                console.error('Error loading dummy data:', e);
+                return {
+                    testuser: [
+                        { id: uid(), place: 'Test Trading 212', category: 'stocks', eur: 100, inr: 0, notes: 'Fallback dummy data' },
+                        { id: uid(), place: 'Test Savings', category: 'savings', eur: 0, inr: 12000, notes: 'Fallback dummy data' }
+                    ],
+                    lastUpdated: new Date().toISOString(),
+                    fxRate: 92.50
+                };
+            }
+        }
+
+        function uid() { return Math.random().toString(36).slice(2, 9); }
 
         async function saveStateCloud() {
             if (!sbClient) {
@@ -1982,17 +2078,25 @@
 
         function renderTables() {
             const raviBody = document.getElementById('raviBody');
-            if (raviBody) raviBody.innerHTML = state.ravi.map(i => renderRow(i, 'ravi')).join('');
+            if (raviBody) raviBody.innerHTML = (state.ravi || []).map(i => renderRow(i, 'ravi')).join('');
             const supriyaBody = document.getElementById('supriyaBody');
-            if (supriyaBody) supriyaBody.innerHTML = state.supriya.map(i => renderRow(i, 'supriya')).join('');
+            if (supriyaBody) supriyaBody.innerHTML = (state.supriya || []).map(i => renderRow(i, 'supriya')).join('');
+            const testuserBody = document.getElementById('testuserBody');
+            if (testuserBody) testuserBody.innerHTML = (state.testuser || []).map(i => renderRow(i, 'testuser')).join('');
+
             const raviFooter = document.getElementById('raviFooter');
-            if (raviFooter) raviFooter.innerHTML = renderFooter(state.ravi);
+            if (raviFooter) raviFooter.innerHTML = renderFooter(state.ravi || []);
             const supriyaFooter = document.getElementById('supriyaFooter');
-            if (supriyaFooter) supriyaFooter.innerHTML = renderFooter(state.supriya);
+            if (supriyaFooter) supriyaFooter.innerHTML = renderFooter(state.supriya || []);
+            const testuserFooter = document.getElementById('testuserFooter');
+            if (testuserFooter) testuserFooter.innerHTML = renderFooter(state.testuser || []);
+
             const raviCards = document.getElementById('raviCards');
-            if (raviCards) raviCards.innerHTML = renderMobileCards(state.ravi, 'ravi');
+            if (raviCards) raviCards.innerHTML = renderMobileCards(state.ravi || [], 'ravi');
             const supriyaCards = document.getElementById('supriyaCards');
-            if (supriyaCards) supriyaCards.innerHTML = renderMobileCards(state.supriya, 'supriya');
+            if (supriyaCards) supriyaCards.innerHTML = renderMobileCards(state.supriya || [], 'supriya');
+            const testuserCards = document.getElementById('testuserCards');
+            if (testuserCards) testuserCards.innerHTML = renderMobileCards(state.testuser || [], 'testuser');
         }
 
         function getGoldPerGram() { return parseFloat(document.getElementById('goldPerGram').value) || 0; }
@@ -2048,14 +2152,48 @@
             const gpg = getGoldPerGram();
             state.fxRate = fx;
 
-            // For gold rows, use computed value (grams × price/g) instead of stored eur
-            const raviEur = state.ravi.reduce((s, i) => s + eurVal(i), 0);
-            const raviInr = state.ravi.reduce((s, i) => s + (parseFloat(i.inr) || 0), 0);
-            const supEur = state.supriya.reduce((s, i) => s + eurVal(i), 0);
-            const supInr = state.supriya.reduce((s, i) => s + (parseFloat(i.inr) || 0), 0);
+            // Handle testuser state separately
+            const isTestUser = sessionStorage.getItem('useDummyData') === 'true';
+
+            if (isTestUser && state.testuser) {
+                // Test user: only calculate testuser data
+                const testEur = (state.testuser || []).reduce((s, i) => s + eurVal(i), 0);
+                const testInr = (state.testuser || []).reduce((s, i) => s + (parseFloat(i.inr) || 0), 0);
+                const totalEur = testEur + testInr / fx;
+                const allInrEquiv = totalEur * fx;
+
+                // Update summary cards
+                document.getElementById('totalEur').textContent = '€' + totalEur.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('totalInrEquiv').textContent = '≈ ₹' + allInrEquiv.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                document.getElementById('totalEurOnly').textContent = '€' + testEur.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('totalInrOnly').textContent = '₹' + testInr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+                // Hide individual owner cards for test user
+                const raviCard = document.querySelector('.summary-card[style*="ravi-color"]');
+                const supCard = document.querySelector('.summary-card[style*="supriya-color"]');
+                if (raviCard) raviCard.style.display = 'none';
+                if (supCard) supCard.style.display = 'none';
+
+                // Render charts for testuser data
+                renderCharts(totalEur, testEur, 0, testInr, 0, fx, 'testuser');
+                renderTables();
+                return;
+            }
+
+            // Normal mode: show ravi and supriya
+            const raviEur = (state.ravi || []).reduce((s, i) => s + eurVal(i), 0);
+            const raviInr = (state.ravi || []).reduce((s, i) => s + (parseFloat(i.inr) || 0), 0);
+            const supEur = (state.supriya || []).reduce((s, i) => s + eurVal(i), 0);
+            const supInr = (state.supriya || []).reduce((s, i) => s + (parseFloat(i.inr) || 0), 0);
 
             const totalEur = raviEur + supEur + (raviInr + supInr) / fx;
             const allInrEquiv = totalEur * fx;
+
+            // Show individual owner cards
+            const raviCard = document.querySelector('.summary-card[style*="ravi-color"]');
+            const supCard = document.querySelector('.summary-card[style*="supriya-color"]');
+            if (raviCard) raviCard.style.display = '';
+            if (supCard) supCard.style.display = '';
 
             // Summary cards
             document.getElementById('totalEur').textContent = '€' + totalEur.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2071,8 +2209,8 @@
             document.getElementById('totalInrOnly').textContent = '₹' + (raviInr + supInr).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
             // Gold calculator
-            const raviGold = state.ravi.filter(i => i.category === 'gold');
-            const supGold = state.supriya.filter(i => i.category === 'gold');
+            const raviGold = (state.ravi || []).filter(i => i.category === 'gold');
+            const supGold = (state.supriya || []).filter(i => i.category === 'gold');
             const raviGrams = raviGold.reduce((s, i) => s + parseGoldGrams(i), 0);
             const supGrams = supGold.reduce((s, i) => s + parseGoldGrams(i), 0);
             const totalGrams = raviGrams + supGrams;
@@ -2084,8 +2222,8 @@
 
             // Silver calculator
             const sps = getSilverPerGram();
-            const raviSilver = state.ravi.filter(i => i.category === 'silver');
-            const supSilver = state.supriya.filter(i => i.category === 'silver');
+            const raviSilver = (state.ravi || []).filter(i => i.category === 'silver');
+            const supSilver = (state.supriya || []).filter(i => i.category === 'silver');
             const raviSilverGrams = raviSilver.reduce((s, i) => s + parseGoldGrams(i), 0);
             const supSilverGrams = supSilver.reduce((s, i) => s + parseGoldGrams(i), 0);
             const totalSilverGrams = raviSilverGrams + supSilverGrams;
@@ -2100,10 +2238,14 @@
         }
 
         // ─── CHARTS ──────────────────────────────────────────────────────────────────
-        function renderCharts(totalEur, raviEurT, supriyaEurT, raviInrT, supriyaInrT, fx) {
+        function renderCharts(totalEur, raviEurT, supriyaEurT, raviInrT, supriyaInrT, fx, mode) {
+            // Determine which data to use
+            const isTestUser = mode === 'testuser';
+            const dataArray = isTestUser ? (state.testuser || []) : [...(state.ravi || []), ...(state.supriya || [])];
+
             // Category breakdown
             const catTotals = {};
-            [...state.ravi, ...state.supriya].forEach(i => {
+            dataArray.forEach(i => {
                 const val = eurVal(i) + (parseFloat(i.inr) || 0) / fx;
                 catTotals[i.category] = (catTotals[i.category] || 0) + val;
             });
@@ -2113,7 +2255,7 @@
 
             // EUR Chart
             const eurCatTotals = {};
-            [...state.ravi, ...state.supriya].forEach(i => {
+            dataArray.forEach(i => {
                 const val = eurVal(i);
                 if (val > 0) eurCatTotals[i.category] = (eurCatTotals[i.category] || 0) + val;
             });
@@ -2130,7 +2272,7 @@
 
             // INR Chart
             const inrCatTotals = {};
-            [...state.ravi, ...state.supriya].forEach(i => {
+            dataArray.forEach(i => {
                 const val = parseFloat(i.inr) || 0;
                 if (val > 0) inrCatTotals[i.category] = (inrCatTotals[i.category] || 0) + val;
             });
@@ -2145,37 +2287,61 @@
         </div>`).join('')
                 : '<div style="color:var(--text-muted);font-size:13px;">No INR data</div>';
 
-            // Owner (EUR)
-            const ownerMax = Math.max(raviEurT, supriyaEurT, 1);
-            document.getElementById('ownerEurChart').innerHTML = raviEurT > 0 || supriyaEurT > 0
-                ? `
-    <div class="bar-row">
-      <div class="bar-label" style="color:var(--ravi-color)">Ravindra</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(raviEurT / ownerMax * 100).toFixed(1)}%;background:var(--ravi-color)"></div></div>
-      <div class="bar-amount">€${raviEurT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-    </div>
-    <div class="bar-row" style="margin-top:14px;">
-      <div class="bar-label" style="color:var(--supriya-color)">Supriya</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(supriyaEurT / ownerMax * 100).toFixed(1)}%;background:var(--supriya-color)"></div></div>
-      <div class="bar-amount">€${supriyaEurT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-    </div>`
-                : '<div style="color:var(--text-muted);font-size:13px;">No EUR data</div>';
+            // Owner charts - hide for testuser, show Ravindra/Supriya for normal users
+            if (isTestUser) {
+                const testUserEur = (state.testuser || []).reduce((s, i) => s + eurVal(i), 0);
+                const testUserEurMax = Math.max(testUserEur, 1);
+                document.getElementById('ownerEurChart').innerHTML = testUserEur > 0
+                    ? `
+        <div class="bar-row">
+          <div class="bar-label" style="color:#6c757d">Test User</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(testUserEur / testUserEurMax * 100).toFixed(1)}%;background:#6c757d"></div></div>
+          <div class="bar-amount">€${testUserEur.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+        </div>`
+                    : '<div style="color:var(--text-muted);font-size:13px;">No EUR data</div>';
 
-            // Owner (INR)
-            const ownerInrMax = Math.max(raviInrT, supriyaInrT, 1);
-            document.getElementById('ownerInrChart').innerHTML = raviInrT > 0 || supriyaInrT > 0
-                ? `
-    <div class="bar-row">
-      <div class="bar-label" style="color:var(--ravi-color)">Ravindra</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(raviInrT / ownerInrMax * 100).toFixed(1)}%;background:var(--ravi-color)"></div></div>
-      <div class="bar-amount">₹${raviInrT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-    </div>
-    <div class="bar-row" style="margin-top:14px;">
-      <div class="bar-label" style="color:var(--supriya-color)">Supriya</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(supriyaInrT / ownerInrMax * 100).toFixed(1)}%;background:var(--supriya-color)"></div></div>
-      <div class="bar-amount">₹${supriyaInrT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-    </div>`
-                : '<div style="color:var(--text-muted);font-size:13px;">No INR data</div>';
+                const testUserInr = (state.testuser || []).reduce((s, i) => s + (parseFloat(i.inr) || 0), 0);
+                const testUserInrMax = Math.max(testUserInr, 1);
+                document.getElementById('ownerInrChart').innerHTML = testUserInr > 0
+                    ? `
+        <div class="bar-row">
+          <div class="bar-label" style="color:#6c757d">Test User</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(testUserInr / testUserInrMax * 100).toFixed(1)}%;background:#6c757d"></div></div>
+          <div class="bar-amount">₹${testUserInr.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+        </div>`
+                    : '<div style="color:var(--text-muted);font-size:13px;">No INR data</div>';
+            } else {
+                // Normal mode - show Ravindra/Supriya owner charts
+                const ownerMax = Math.max(raviEurT, supriyaEurT, 1);
+                document.getElementById('ownerEurChart').innerHTML = raviEurT > 0 || supriyaEurT > 0
+                    ? `
+        <div class="bar-row">
+          <div class="bar-label" style="color:var(--ravi-color)">Ravindra</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(raviEurT / ownerMax * 100).toFixed(1)}%;background:var(--ravi-color)"></div></div>
+          <div class="bar-amount">€${raviEurT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+        </div>
+        <div class="bar-row" style="margin-top:14px;">
+          <div class="bar-label" style="color:var(--supriya-color)">Supriya</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(supriyaEurT / ownerMax * 100).toFixed(1)}%;background:var(--supriya-color)"></div></div>
+          <div class="bar-amount">€${supriyaEurT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+        </div>`
+                    : '<div style="color:var(--text-muted);font-size:13px;">No EUR data</div>';
+
+                const ownerInrMax = Math.max(raviInrT, supriyaInrT, 1);
+                document.getElementById('ownerInrChart').innerHTML = raviInrT > 0 || supriyaInrT > 0
+                    ? `
+        <div class="bar-row">
+          <div class="bar-label" style="color:var(--ravi-color)">Ravindra</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(raviInrT / ownerInrMax * 100).toFixed(1)}%;background:var(--ravi-color)"></div></div>
+          <div class="bar-amount">₹${raviInrT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+        </div>
+        <div class="bar-row" style="margin-top:14px;">
+          <div class="bar-label" style="color:var(--supriya-color)">Supriya</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(supriyaInrT / ownerInrMax * 100).toFixed(1)}%;background:var(--supriya-color)"></div></div>
+          <div class="bar-amount">₹${supriyaInrT.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+        </div>`
+                    : '<div style="color:var(--text-muted);font-size:13px;">No INR data</div>';
+            }
         }
 
         // ─── CRUD ────────────────────────────────────────────────────────────────────
@@ -2263,10 +2429,10 @@
         // ─── TABS ────────────────────────────────────────────────────────────────────
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
             const combined = document.querySelector('.view-combined');
             if (combined) {
-                combined.classList.remove('tab-ravi', 'tab-supriya');
+                combined.classList.remove('tab-ravi', 'tab-supriya', 'tab-testuser');
                 if (tab !== 'combined') combined.classList.add('tab-' + tab);
             }
         }
@@ -2337,6 +2503,12 @@
                 const { data: { session } } = await sbClient.auth.getSession();
                 if (session && session.user) {
                     isMainUser = session.user.email.toLowerCase() === 'ravindraten@gmail.com';
+
+                    // Set dummy data flag for test user
+                    if (session.user.email.toLowerCase() === 'testuser@gmail.com') {
+                        sessionStorage.setItem('useDummyData', 'true');
+                    }
+
                     updateUIPermissions(session.user.email);
                 } else {
                     updateUIPermissions();
